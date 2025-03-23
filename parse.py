@@ -19,9 +19,8 @@ def parse_list_spiegel():
     return result
 
 
-def parse_text_spiegel(name, url):
+def parse_text_spiegel(url):
     result = ""
-    if url == "": url = parse_list_spiegel().get(name)
     scr = requests.get(url).text
     soup = BeautifulSoup(scr, "lxml")
     full_text = soup.find_all("main", {"id": "Inhalt"})[0].find_all("div", {"data-sara-click-el": "body_element",
@@ -46,9 +45,8 @@ def parse_list_bild():
     return result
 
 
-def parse_text_bild(name, url):
+def parse_text_bild(url):
     result = ""
-    if url == "": url = parse_list_bild().get(name)
     scr = requests.get(url).text
     soup = BeautifulSoup(scr, "lxml")
     full_text = soup.find("main", {"id": "main"}).find("div", "article-body").find_all("p")
@@ -74,9 +72,8 @@ def parse_list_bbc():
     return result
 
 
-def parse_text_bbc(name, url):
+def parse_text_bbc(url):
     result = ""
-    if url == "": url = parse_list_bbc().get(name)
     scr = requests.get(url).text
     soup = BeautifulSoup(scr, "lxml")
     full_text = soup.find("main", {"id": "main-content"}).find_all("div", {"data-component": "text-block"})
@@ -101,9 +98,8 @@ def parse_list_cnn():
     return result
 
 
-def parse_text_cnn(name, url):
+def parse_text_cnn(url):
     result = ""
-    if url == "": url = parse_list_cnn().get(name)
     scr = requests.get(url).text
     soup = BeautifulSoup(scr, "lxml")
     full_text = soup.find("main", class_="article__main").find("div", class_="article__content").find_all("p")
@@ -125,9 +121,8 @@ def parse_list_telegraph():
     return result
 
 
-def parse_text_telegraph(name, url):
+def parse_text_telegraph(name):
     result = ""
-    if url == "": url = parse_list_telegraph().get(name)
     scr = requests.get(url).text
     soup = BeautifulSoup(scr, "lxml")
     full_text = soup.find("div", {"itemprop": "articleBody", "data-js": "article-body"}).find_all("div",

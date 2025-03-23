@@ -53,7 +53,7 @@ def update_cache():
                     label = value
                     label_translation = get_gpt_answer(label, label_translate)
 
-                    text_news = split_message(get_text_function("", key))
+                    text_news = split_message(get_text_function(key))
                     translation_text = split_message(get_gpt_answer(str(text_news), sample_translate))
 
                     retelling = split_message(get_gpt_answer(str(text_news), sample_retell))
