@@ -1,6 +1,10 @@
 from bs4 import BeautifulSoup
 import requests
 
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+}
+
 
 # Spiegel
 def parse_list_spiegel():
@@ -11,7 +15,7 @@ def parse_list_spiegel():
     for item in full_info[:5]:
         name = item.find_all("h2", class_="w-full")[0].find("span", class_="align-middle").text
         link = item.find_all("h2", class_="w-full")[0].find("a").get("href")
-        result[name] = link
+        result[link] = name
     return result
 
 
@@ -30,16 +34,15 @@ def parse_text_spiegel(name, url):
 # Bild
 def parse_list_bild():
     result = {}
-    scr = requests.get("https://www.bild.de/politik/ausland.html").text
+    scr = requests.get("https://www.bild.de/politik/ausland/politik-ausland/home-15683414.bild.html").text
     soup = BeautifulSoup(scr, "lxml")
-
-    full_text = soup.find("main", {"id": "main"}).find("div", "layout layout-9 layout-9--desktop")
-
-    for item in list(full_text)[1:]:
-        link = "https://bild.de" + item.find("a").get("href")
+    full_text = soup.find("main", {"id": "main"}).find("section", {"class": "block block--titled"}).find("div", {
+        "class": "layout layout-9 layout-9--desktop"})
+    for item in list(full_text)[1:6]:
+        link = "https://bild.de" + item.find("a", {"class": "anchor stage-teaser__anchor"}).get("href")
         if "bild-plus" not in link:
-            name = item.find("div", "teaser__title").find("span", "teaser__title__headline").text
-            result[name] = link
+            name = item.find("h3", {"class": "teaser__title"}).find("span", {"class": "teaser__title__headline"}).text
+            result[link] = name
     return result
 
 
@@ -57,13 +60,17 @@ def parse_text_bild(name, url):
 # BBC
 def parse_list_bbc():
     result = {}
-    scr = requests.get("https://www.bbc.com/news/topics/c1vw6q14rzqt").text
+    scr = requests.get("https://www.bbc.com/news/war-in-ukraine").text
     soup = BeautifulSoup(scr, "lxml")
-    full_text = soup.find_all("div", {"data-testid": "promo"})
+    full_text = soup.find("div", {"data-testid": "undefined-grid-7"}).find_all("div",
+                                                                               {"data-testid": "anchor-inner-wrapper"})
     for item in full_text[:5]:
         link = "https://bbc.com" + item.find("a").get("href")
-        name = item.find("span", {"role": "text"}).text
-        result[name] = link
+        if "live" in link:
+            continue
+        name = item.find("h2", {"data-testid": "card-headline"}).text
+        result[link] = name
+    result = dict(reversed(list(result.items())))
     return result
 
 
@@ -83,13 +90,14 @@ def parse_list_cnn():
     result = {}
     scr = requests.get("https://edition.cnn.com/world/europe").text
     soup = BeautifulSoup(scr, "lxml")
-    full_text = soup.find("div",
-                          class_="container__field-links container_lead-plus-headlines-with-images__field-links").find_all(
-        "a")
-    for item in full_text[1::2]:
-        link = "https://edition.cnn.com" + item.get("href")
-        name = item.text.strip()
-        result[name] = link
+    full_text = soup.find("div", {"class": "zone zone--t-light"}).find_all("div", {
+        "class": "card container__item container__item--type-media-image container__item--type-section container_vertical-strip__item container_vertical-strip__item--type-section"})
+    for item in list(full_text)[:5]:
+        link = "https://edition.cnn.com" + item.find("a").get("href")
+        if "live" in link:
+            continue
+        name = item.find("span", {"class": "container__headline-text"}).text
+        result[link] = name
     return result
 
 
@@ -107,9 +115,9 @@ def parse_text_cnn(name, url):
 # The Daily Telegraph
 def parse_list_telegraph():
     result = {}
-    scr = requests.get("https://www.telegraph.co.uk/russia-ukraine-war/").text
+    scr = requests.get("https://www.telegraph.co.uk/russia-ukraine-war/", headers=headers).text
     soup = BeautifulSoup(scr, "lxml")
-    full_text = soup.find("section", class_="article-list-hero").find_all("li")
+    full_text = soup.find("main", {"id": "main-content"})
     for item in full_text[1:6]:
         name = item.find("h2").text.strip()
         link = "https://telegraph.co.uk" + item.find("a").get("href")

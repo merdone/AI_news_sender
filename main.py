@@ -5,6 +5,7 @@ from parse import *
 from translate import *
 from gpt import get_gpt_answer, sample_translate, sample_retell
 import os
+import time
 
 load_dotenv()
 bot = telebot.TeleBot(os.getenv('TOKEN'))
@@ -57,12 +58,43 @@ def start(message: types.Message):
 def start_news(message):
     global start_message
     if message.text == "📜 Список джерел":
-        start_message = bot.send_message(message.chat.id, "<b>Оберіть джерело, з якого брати статтю:</b>", reply_markup=first_choice,
-                         parse_mode="html")
+        start_message = bot.send_message(message.chat.id, "<b>Оберіть джерело, з якого брати статтю:</b>",
+                                         reply_markup=first_choice,
+                                         parse_mode="html")
     elif message.text == "✉ Залишити відгук":
         feedback_message = bot.send_message(message.chat.id, "Будь ласка, залиште свій відгук:")
         bot.register_next_step_handler(feedback_message, input_feedback)
 
+
+def split_message(msg: str, *, with_photo: bool) -> list[str]:
+    """Split the text into parts considering Telegram limits."""
+    parts = []
+    while msg:
+        if parts:
+            max_msg_length = 4096
+        elif with_photo:
+            max_msg_length = 1024
+        else:
+            max_msg_length = 4096
+        if len(msg) <= max_msg_length:
+            parts.append(msg)
+            break
+        part = msg[:max_msg_length]
+        first_ln = part.rfind("\n")
+        if first_ln != -1:
+            new_part = part[:first_ln]
+            parts.append(new_part)
+            msg = msg[first_ln + 1:]
+            continue
+        first_space = part.rfind(" ")
+        if first_space != -1:
+            new_part = part[:first_space]
+            parts.append(new_part)
+            msg = msg[first_space + 1:]
+            continue
+        parts.append(part)
+        msg = msg[max_msg_length:]
+    return parts
 
 def input_feedback(message):
     file = open('feedback.txt', 'a')
@@ -145,9 +177,10 @@ def callback(call):
             bot.delete_message(call.message.chat.id, waiting_message.message_id)
 
 
-    except:
+    except Exception as e:
         bot.send_message(call.message.chat.id, "Вибачте, сталась помилка, оберіть, будь ласка, іншу статтю🤗")
         start_news(call.message)
+        print(e)
 
 
 bot.polling(none_stop=True)
