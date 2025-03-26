@@ -1,6 +1,7 @@
+import asyncio
+import json
 from parse import *
 from gpt import *
-import json
 
 
 def split_message(msg: str) -> list[str]:
@@ -60,9 +61,9 @@ def update_cache():
 
                     database[edition] = {key: [
                         {"label": label},
-                        {"label_translation": label_translation},
+                        {"label.translation": label_translation},
                         {"text": text_news},
-                        {"text_translation": translation_text},
+                        {"text.translation": translation_text},
                         {"retelling": retelling}
                     ]}
                     database[edition].update(items)
@@ -72,3 +73,8 @@ def update_cache():
     with open('cache.json', 'w', encoding="utf-8") as file:
         json.dump(database, file, indent=4, ensure_ascii=False)
 
+
+async def run_update_cache():
+    while True:
+        update_cache()
+        await asyncio.sleep(3600)

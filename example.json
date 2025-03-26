@@ -3,9 +3,9 @@
         "https://edition":
             [
                 {"label": "label of news"},
-                {"label_translation": "Переклад назви"},
+                {"label.translation": "Переклад назви"},
                 {"text": ["Text part1", "Text part2"]},
-                {"text_translation": ["Переклад частина 1", "Переклад частина 2"]},
+                {"text.translation": ["Переклад частина 1", "Переклад частина 2"]},
                 {"retelling": ["Переказ частина 1", "Переказ частина 2"]}
             ]
     }

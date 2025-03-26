@@ -121,7 +121,7 @@ def parse_list_telegraph():
     return result
 
 
-def parse_text_telegraph(name):
+def parse_text_telegraph(url):
     result = ""
     scr = requests.get(url).text
     soup = BeautifulSoup(scr, "lxml")
