@@ -2,4 +2,5 @@
 .env
 .idea/
 feedback.txt
-cache.json
+utils/cache.json
+feedback.json

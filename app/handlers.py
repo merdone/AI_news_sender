@@ -1,6 +1,8 @@
 from aiogram import F, Router
-from aiogram.filters import CommandStart, Command
+from aiogram.filters import CommandStart
+from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, CallbackQuery
+from aiogram.fsm.context import FSMContext
 import asyncio
 import json
 
@@ -16,6 +18,11 @@ convert_action_to_index = {"label": 0,
                            "text": 2,
                            "text.translation": 3,
                            "retelling": 4}
+FEEDBACK_FILE = "feedback.json"
+
+
+class Feedback(StatesGroup):
+    feedback = State()
 
 
 @router.message(CommandStart())
@@ -25,15 +32,37 @@ async def cmd_start(message: Message):
                          reply_markup=first_message)
 
 
-@router.message(Command('help'))
-async def get_help(message: Message):
-    await message.answer('Это команда /help')
-
-
 @router.message(F.text == '📜 Список джерел')
 async def get_list_of_editions(message: Message):
     await message.answer("<b>Оберіть джерело, з якого брати статтю:</b>",
                          reply_markup=await edition_choice(), parse_mode="html")
+
+
+def save_feedback(user_id, feedback):
+    with open(FEEDBACK_FILE, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    user_id_str = str(user_id)
+    if user_id_str not in data:
+        data[user_id_str] = []
+    data[user_id_str].append(feedback)
+    with open(FEEDBACK_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+@router.message(F.text == "✉ Залишити відгук")
+async def get_feedback(message: Message, state: FSMContext):
+    await state.set_state(Feedback.feedback)
+    await message.answer("Введіть Ваш відгук: ")
+
+
+@router.message(Feedback.feedback)
+async def collecting_feedback(message: Message, state: FSMContext):
+    await state.update_data(feedback=message.text)
+    data = await state.get_data()
+    feedback = data["feedback"]
+    save_feedback(message.from_user.id, feedback)
+    await message.answer("Дякую за твій відгук!")
+    await state.clear()
 
 
 async def delete_old_messages(callback: CallbackQuery):
@@ -92,8 +121,8 @@ async def getting_info_callback_handler(callback: CallbackQuery):
     link = list(temp_database.keys())[index]
     index_of_action = convert_action_to_index[type_of_work]
     message = temp_database[link][index_of_action][type_of_work]
-
     last_message_text = callback.message.text
+
     if last_message_text[:100] == message[-1][:100]:
         await callback.answer("Цю дію вже зроблено")
         return
@@ -101,13 +130,18 @@ async def getting_info_callback_handler(callback: CallbackQuery):
     await delete_old_messages(callback)
 
     if len(message) == 1:
-        await callback.message.edit_text(message[0], reply_markup=await action_choice(edition_name, index))
+        try:
+            await callback.message.edit_text(message[0], reply_markup=await action_choice(edition_name, index),
+                                             parse_mode="html")
+        except Exception as e:
+            await callback.answer("Цю дію вже зроблено")
     else:
         await callback.message.delete()
         previous_msgs = []
         for i in range(len(message) - 1):
-            msg = await callback.message.answer(message[i])
+            msg = await callback.message.answer(message[i], parse_mode="html")
             previous_msgs.append(msg.message_id)
-        await callback.message.answer(message[-1], reply_markup=await action_choice(edition_name, index))
+        await callback.message.answer(message[-1], reply_markup=await action_choice(edition_name, index),
+                                      parse_mode="html")
         user_message_history[callback.from_user.id] = previous_msgs
     await callback.answer()

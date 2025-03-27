@@ -3,7 +3,7 @@ import logging
 
 from aiogram import Bot, Dispatcher
 from app.handlers import router, cleanup_old_entries
-from cache_updating import run_update_cache
+from utils.cache_updating import run_update_cache
 
 import os
 from dotenv import load_dotenv
